@@ -1,6 +1,6 @@
-import router from '@ohos.router'
+// Router is now accessed through UIContext
 import preferences from '@ohos.data.preferences'
-import promptAction from '@ohos.promptAction'
+// PromptAction is now accessed through UIContext
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
 
@@ -12,7 +12,7 @@ struct NoteInput {
   @State status: string = ''
 
   aboutToAppear() {
-    const params = (router.getParams() || {}) as RouterParams
+    const params = (this.getUIContext().getRouter().getParams() || {}) as RouterParams
     this.text = params?.text || ''
     this.date = params?.date || ''
     this.status = params?.status || ''
@@ -21,7 +21,7 @@ struct NoteInput {
   async saveAndReturn() {
     try {
       // 获取preferences实例
-      const dataPreferences = await preferences.getPreferences((getContext(this) as common.UIAbilityContext), 'study_records')
+      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
 
       // 读取现有记录
       const recordsStr = await dataPreferences.get('records', '[]') as string
@@ -47,16 +47,16 @@ struct NoteInput {
       await dataPreferences.put('records', JSON.stringify(records))
       await dataPreferences.flush()
 
-      promptAction.showToast({
+      this.getUIContext().getPromptAction().showToast({
         message: '记录保存成功',
         duration: 2000
       })
 
       // 返回主页
-      router.clear()
-      router.replaceNamedRoute({ name: 'pages/Index' })
+      this.getUIContext().getRouter().clear()
+      this.getUIContext().getRouter().replaceNamedRoute({ name: 'pages/Index' })
     } catch (error) {
-      promptAction.showToast({
+      this.getUIContext().getPromptAction().showToast({
         message: '保存失败，请重试',
         duration: 2000
       })
@@ -71,7 +71,7 @@ struct NoteInput {
           .width(24)
           .height(24)
           .onClick(() => {
-            router.back()
+            this.getUIContext().getRouter().back()
           })
 
         Blank()

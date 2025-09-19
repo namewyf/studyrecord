@@ -1,5 +1,5 @@
-import router from '@ohos.router'
-import promptAction from '@ohos.promptAction'
+// Router is now accessed through UIContext
+// PromptAction is now accessed through UIContext
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { ActionDialog } from '../components/ActionDialog'
@@ -35,7 +35,7 @@ struct Index {
 
   async loadRecords() {
     try {
-      const dataPreferences = await preferences.getPreferences((getContext(this) as common.UIAbilityContext), 'study_records')
+      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
       const recordsStr = await dataPreferences.get('records', '[]') as string
       this.records = JSON.parse(recordsStr)
     } catch (error) {
@@ -69,7 +69,7 @@ struct Index {
 
   onActionSelect(status: 'completed' | 'copied') {
     this.dialogController.close()
-    router.pushNamedRoute({
+    this.getUIContext().getRouter().pushNamedRoute({
       name: 'pages/RecordDetail',
       params: {
         date: this.selectedDate,
@@ -211,7 +211,7 @@ struct Index {
       }, (item: number, index?: number) => index?.toString())
 
       // 填充日期
-      ForEach(Array(this.getDaysInMonth(this.currentYear, this.currentMonth)).fill(0).map((_, i) => i + 1), (day: number) => {
+      ForEach(Array(this.getDaysInMonth(this.currentYear, this.currentMonth)).fill(0).map((_: number, i: number) => i + 1), (day: number) => {
         GridItem() {
           this.buildDayItem(day)
         }

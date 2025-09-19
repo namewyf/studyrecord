@@ -1,5 +1,5 @@
-import router from '@ohos.router'
-import promptAction from '@ohos.promptAction'
+// Router is now accessed through UIContext
+// PromptAction is now accessed through UIContext
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
@@ -15,7 +15,7 @@ struct RecordDetail {
   private weekDays: string[] = ['六', '日', '一', '二', '三', '四', '五']
 
   aboutToAppear() {
-    const params = router.getParams() as RouterParams
+    const params = this.getUIContext().getRouter().getParams() as RouterParams
     this.date = params?.date || ''
     this.status = params?.status || ''
     this.calculateWeekDates()
@@ -52,7 +52,7 @@ struct RecordDetail {
   async saveRecord() {
     try {
       // 获取preferences实例
-      const dataPreferences = await preferences.getPreferences((getContext(this) as common.UIAbilityContext), 'study_records')
+      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
 
       // 读取现有记录
       const recordsStr = await dataPreferences.get('records', '[]') as string
@@ -78,15 +78,15 @@ struct RecordDetail {
       await dataPreferences.put('records', JSON.stringify(records))
       await dataPreferences.flush()
 
-      promptAction.showToast({
+      this.getUIContext().getPromptAction().showToast({
         message: '记录保存成功',
         duration: 2000
       })
 
       // 返回主页
-      router.back()
+      this.getUIContext().getRouter().back()
     } catch (error) {
-      promptAction.showToast({
+      this.getUIContext().getPromptAction().showToast({
         message: '保存失败，请重试',
         duration: 2000
       })
@@ -101,7 +101,7 @@ struct RecordDetail {
           .width(24)
           .height(24)
           .onClick(() => {
-            router.back()
+            this.getUIContext().getRouter().back()
           })
 
         Blank()
@@ -179,7 +179,7 @@ struct RecordDetail {
           })
           .onClick(() => {
             // 跳转到文字输入页面
-            router.pushNamedRoute({
+            this.getUIContext().getRouter().pushNamedRoute({
               name: 'pages/NoteInput',
               params: {
                 text: this.note,
