@@ -11,14 +11,27 @@ struct RecordDetail {
   @State status: string = ''
   @State note: string = ''
   @State currentWeekDates: number[] = []
+  @State records: StudyRecord[] = []
 
-  private weekDays: string[] = ['六', '日', '一', '二', '三', '四', '五']
+  private weekDays: string[] = ['日', '一', '二', '三', '四', '五', '六']
 
   aboutToAppear() {
     const params = this.getUIContext().getRouter().getParams() as RouterParams
     this.date = params?.date || ''
     this.status = params?.status || ''
     this.calculateWeekDates()
+    this.loadRecords()
+  }
+
+  async loadRecords() {
+    try {
+      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
+      const recordsStr = await dataPreferences.get('records', '[]') as string
+      this.records = JSON.parse(recordsStr)
+    } catch (error) {
+      console.error('Failed to load records:', error)
+      this.records = []
+    }
   }
 
   calculateWeekDates() {
@@ -41,12 +54,21 @@ struct RecordDetail {
     return `${month}.${day} 计数`
   }
 
+  hasRecord(day: number): StudyRecord | undefined {
+    const dateObj = new Date(this.date)
+    const year = dateObj.getFullYear()
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0')
+    const dayStr = day.toString().padStart(2, '0')
+    const checkDate = `${year}-${month}-${dayStr}`
+    return this.records.find(r => r.date === checkDate)
+  }
+
   getStatusIcon(): string {
-    return this.status === 'completed' ? '✅' : '📝'
+    return '⏳'
   }
 
   getStatusText(): string {
-    return this.status === 'completed' ? '作业做完了' : '做了，准备抄了'
+    return '看完了一本书'
   }
 
   async saveRecord() {
@@ -141,20 +163,40 @@ struct RecordDetail {
         ForEach(this.weekDays, (day: string, index: number) => {
           Column() {
             Text(day)
-              .fontSize(12)
-              .fontColor('#666666')
-              .margin({ bottom: 4 })
-
-            Text(this.currentWeekDates[index]?.toString() || '')
               .fontSize(14)
-              .fontColor('#999999')
+              .fontColor('#666666')
+              .margin({ bottom: 8 })
 
             if (this.currentWeekDates[index] === new Date(this.date).getDate()) {
+              // 当前选中的日期，显示白色圆圈背景
+              Stack() {
+                Circle()
+                  .width(36)
+                  .height(36)
+                  .fill('#FFFFFF')
+                Text(this.currentWeekDates[index]?.toString() || '')
+                  .fontSize(16)
+                  .fontColor('#000000')
+                  .fontWeight(FontWeight.Medium)
+              }
+            } else {
+              Text(this.currentWeekDates[index]?.toString() || '')
+                .fontSize(16)
+                .fontColor('#FFFFFF')
+            }
+
+            // 显示记录指示点
+            if (this.hasRecord(this.currentWeekDates[index])) {
               Circle()
-                .width(4)
-                .height(4)
-                .fill(this.status === 'completed' ? '#00FF00' : '#FFA500')
-                .margin({ top: 4 })
+                .width(6)
+                .height(6)
+                .fill(this.hasRecord(this.currentWeekDates[index])?.status === 'completed' ? '#FFA500' : '#FFA500')
+                .margin({ top: 8 })
+            } else {
+              // 空白占位，保持对齐
+              Text('')
+                .height(6)
+                .margin({ top: 8 })
             }
           }
           .width('14.28%')
@@ -179,8 +221,8 @@ struct RecordDetail {
           })
           .onClick(() => {
             // 跳转到文字输入页面
-            this.getUIContext().getRouter().pushNamedRoute({
-              name: 'pages/NoteInput',
+            this.getUIContext().getRouter().pushUrl({
+              url: 'pages/NoteInput',
               params: {
                 text: this.note,
                 date: this.date,

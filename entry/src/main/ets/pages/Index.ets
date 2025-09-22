@@ -69,8 +69,8 @@ struct Index {
 
   onActionSelect(status: 'completed' | 'copied') {
     this.dialogController.close()
-    this.getUIContext().getRouter().pushNamedRoute({
-      name: 'pages/RecordDetail',
+    this.getUIContext().getRouter().pushUrl({
+      url: 'pages/RecordDetail',
       params: {
         date: this.selectedDate,
         status: status
