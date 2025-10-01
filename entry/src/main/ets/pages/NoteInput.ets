@@ -1,8 +1,8 @@
 // Router is now accessed through UIContext
-import preferences from '@ohos.data.preferences'
 // PromptAction is now accessed through UIContext
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
+import { StorageService } from '../services/StorageService'
 
 @Entry
 @Component
@@ -19,15 +19,13 @@ struct NoteInput {
   }
 
   async saveAndReturn() {
+    console.info('Starting saveAndReturn')
     try {
-      // 获取preferences实例
-      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
+      const storageService = StorageService.getInstance()
+      const context = getContext(this) as common.UIAbilityContext
+      await storageService.init(context)
 
-      // 读取现有记录
-      const recordsStr = await dataPreferences.get('records', '[]') as string
-      const records: StudyRecord[] = JSON.parse(recordsStr)
-
-      // 添加新记录
+      // 创建新记录
       const newRecord: StudyRecord = {
         date: this.date,
         status: this.status as 'completed' | 'copied',
@@ -35,17 +33,8 @@ struct NoteInput {
         timestamp: Date.now()
       }
 
-      // 检查是否已有同日期记录，如果有则更新
-      const existingIndex = records.findIndex((r: StudyRecord) => r.date === this.date)
-      if (existingIndex >= 0) {
-        records[existingIndex] = newRecord
-      } else {
-        records.push(newRecord)
-      }
-
       // 保存记录
-      await dataPreferences.put('records', JSON.stringify(records))
-      await dataPreferences.flush()
+      await storageService.saveRecord(newRecord)
 
       this.getUIContext().getPromptAction().showToast({
         message: '记录保存成功',
@@ -54,8 +43,9 @@ struct NoteInput {
 
       // 返回主页
       this.getUIContext().getRouter().clear()
-      this.getUIContext().getRouter().replaceNamedRoute({ name: 'pages/Index' })
+      this.getUIContext().getRouter().pushUrl({ url: 'pages/Index' })
     } catch (error) {
+      console.error('Failed to save and return:', error)
       this.getUIContext().getPromptAction().showToast({
         message: '保存失败，请重试',
         duration: 2000

@@ -1,8 +1,8 @@
 // Router is now accessed through UIContext
 // PromptAction is now accessed through UIContext
-import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
+import { StorageService } from '../services/StorageService'
 
 @Entry
 @Component
@@ -10,6 +10,7 @@ struct RecordDetail {
   @State date: string = ''
   @State status: string = ''
   @State note: string = ''
+  @State notebookId: string = ''
   @State currentWeekDates: number[] = []
   @State records: StudyRecord[] = []
 
@@ -19,15 +20,19 @@ struct RecordDetail {
     const params = this.getUIContext().getRouter().getParams() as RouterParams
     this.date = params?.date || ''
     this.status = params?.status || ''
+    this.notebookId = params?.notebookId || ''
     this.calculateWeekDates()
     this.loadRecords()
   }
 
   async loadRecords() {
     try {
-      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
-      const recordsStr = await dataPreferences.get('records', '[]') as string
-      this.records = JSON.parse(recordsStr)
+      const storageService = StorageService.getInstance()
+      const context = getContext(this) as common.UIAbilityContext
+      await storageService.init(context)
+      const allRecords = await storageService.loadRecords()
+      // Filter records by notebook ID
+      this.records = allRecords.filter(r => r.notebookId === this.notebookId)
     } catch (error) {
       console.error('Failed to load records:', error)
       this.records = []
@@ -72,33 +77,31 @@ struct RecordDetail {
   }
 
   async saveRecord() {
+    console.info('Starting saveRecord')
     try {
-      // 获取preferences实例
-      const dataPreferences = await preferences.getPreferences((this.getUIContext().getHostContext() as common.UIAbilityContext), 'study_records')
+      const storageService = StorageService.getInstance()
+      console.info('Got StorageService instance')
 
-      // 读取现有记录
-      const recordsStr = await dataPreferences.get('records', '[]') as string
-      const records: StudyRecord[] = JSON.parse(recordsStr)
+      // Ensure StorageService is initialized
+      const context = getContext(this) as common.UIAbilityContext
+      console.info('Got UIAbility context')
 
-      // 添加新记录
+      await storageService.init(context)
+      console.info('StorageService initialized')
+
+      // 创建新记录
       const newRecord: StudyRecord = {
         date: this.date,
         status: this.status as 'completed' | 'copied',
         note: this.note,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        notebookId: this.notebookId
       }
-
-      // 检查是否已有同日期记录，如果有则更新
-      const existingIndex = records.findIndex((r: StudyRecord) => r.date === this.date)
-      if (existingIndex >= 0) {
-        records[existingIndex] = newRecord
-      } else {
-        records.push(newRecord)
-      }
+      console.info('Created new record:', JSON.stringify(newRecord))
 
       // 保存记录
-      await dataPreferences.put('records', JSON.stringify(records))
-      await dataPreferences.flush()
+      await storageService.saveRecord(newRecord)
+      console.info('Record saved successfully')
 
       this.getUIContext().getPromptAction().showToast({
         message: '记录保存成功',
@@ -108,6 +111,9 @@ struct RecordDetail {
       // 返回主页
       this.getUIContext().getRouter().back()
     } catch (error) {
+      console.error('Failed to save record - Error type:', typeof error)
+      console.error('Failed to save record - Error message:', error instanceof Error ? error.message : 'Unknown error')
+      console.error('Failed to save record - Full error:', JSON.stringify(error))
       this.getUIContext().getPromptAction().showToast({
         message: '保存失败，请重试',
         duration: 2000

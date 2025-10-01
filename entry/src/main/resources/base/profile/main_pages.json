@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/Index",
+    "pages/NotebookCalendar",
     "pages/RecordDetail",
     "pages/NoteInput"
   ]
