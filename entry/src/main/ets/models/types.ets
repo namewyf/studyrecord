@@ -27,3 +27,14 @@ export interface RouterParams {
   notebookId?: string
   notebook?: Notebook
 }
+
+export interface ItemStatistic {
+  name: string
+  count: number
+}
+
+export interface MonthInfo {
+  year: number
+  month: number
+  count: number
+}

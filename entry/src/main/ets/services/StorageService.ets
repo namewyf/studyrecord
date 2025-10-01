@@ -40,7 +40,13 @@ export class StorageService {
       console.warn('Failed to initialize preferences, using memory storage for preview mode')
       console.warn('Error details:', JSON.stringify(error, null, 2))
       this.isPreviewMode = true
-      this.memoryStorage.set(this.RECORDS_KEY, '[]')
+      // 只在第一次初始化时设置空数组，避免清空已有数据
+      if (!this.memoryStorage.has(this.RECORDS_KEY)) {
+        this.memoryStorage.set(this.RECORDS_KEY, '[]')
+      }
+      if (!this.memoryStorage.has(this.NOTEBOOKS_KEY)) {
+        this.memoryStorage.set(this.NOTEBOOKS_KEY, '[]')
+      }
       console.info('StorageService initialized with memory storage (preview mode)')
     }
   }
