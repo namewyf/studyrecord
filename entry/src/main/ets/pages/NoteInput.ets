@@ -10,12 +10,14 @@ struct NoteInput {
   @State text: string = ''
   @State date: string = ''
   @State status: string = ''
+  @State notebookId: string = ''
 
   aboutToAppear() {
     const params = (this.getUIContext().getRouter().getParams() || {}) as RouterParams
     this.text = params?.text || ''
     this.date = params?.date || ''
     this.status = params?.status || ''
+    this.notebookId = params?.notebookId || ''
   }
 
   async saveAndReturn() {
@@ -30,7 +32,8 @@ struct NoteInput {
         date: this.date,
         status: this.status as 'completed' | 'copied',
         note: this.text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        notebookId: this.notebookId
       }
 
       // 保存记录
@@ -74,7 +77,7 @@ struct NoteInput {
           })
       }
       .width('100%')
-      .padding(16)
+      .padding({ left: 16, right: 16, top: 56, bottom: 16 })
 
       // 文字输入区域
       TextArea({ placeholder: '写点什么...', text: this.text })

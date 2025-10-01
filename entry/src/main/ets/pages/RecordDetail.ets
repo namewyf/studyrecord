@@ -135,7 +135,7 @@ struct RecordDetail {
         Blank()
       }
       .width('100%')
-      .padding(16)
+      .padding({ left: 16, right: 16, top: 56, bottom: 16 })
 
       // 状态图标
       Text(this.getStatusIcon())
@@ -232,7 +232,8 @@ struct RecordDetail {
               params: {
                 text: this.note,
                 date: this.date,
-                status: this.status
+                status: this.status,
+                notebookId: this.notebookId
               }
             })
           })

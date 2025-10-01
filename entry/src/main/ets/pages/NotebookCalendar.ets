@@ -106,7 +106,7 @@ struct NotebookCalendar {
       }
       .width('100%')
       .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 40 })
       .justifyContent(FlexAlign.SpaceBetween)
 
       // 月份选择

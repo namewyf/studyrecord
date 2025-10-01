@@ -1,12 +1,13 @@
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
-import { StudyRecord } from '../models/types'
+import { StudyRecord, Notebook } from '../models/types'
 
 export class StorageService {
   private static instance: StorageService
   private dataPreferences: preferences.Preferences | null = null
   private readonly STORE_NAME = 'study_records'
   private readonly RECORDS_KEY = 'records'
+  private readonly NOTEBOOKS_KEY = 'notebooks'
 
   // 内存存储作为预览器的后备方案
   private memoryStorage: Map<string, string> = new Map()
@@ -183,6 +184,88 @@ export class StorageService {
         this.memoryStorage.set(this.RECORDS_KEY, '[]')
         console.info('Cleared memory storage (fallback)')
       }
+    }
+  }
+
+  // Notebook storage methods
+  async saveNotebooks(notebooks: Notebook[]): Promise<void> {
+    console.info('saveNotebooks called with notebooks count:', notebooks.length)
+    const notebooksStr = JSON.stringify(notebooks)
+
+    if (this.isPreviewMode) {
+      this.memoryStorage.set(this.NOTEBOOKS_KEY, notebooksStr)
+      console.info(`Successfully saved ${notebooks.length} notebooks to memory`)
+    } else {
+      if (!this.dataPreferences) {
+        this.memoryStorage.set(this.NOTEBOOKS_KEY, notebooksStr)
+        console.info(`Fallback: saved ${notebooks.length} notebooks to memory`)
+        return
+      }
+
+      try {
+        await this.dataPreferences.put(this.NOTEBOOKS_KEY, notebooksStr)
+        await this.dataPreferences.flush()
+        console.info(`Successfully saved ${notebooks.length} notebooks to preferences`)
+      } catch (error) {
+        console.error('Failed to save to preferences, using memory storage')
+        this.memoryStorage.set(this.NOTEBOOKS_KEY, notebooksStr)
+      }
+    }
+  }
+
+  async loadNotebooks(): Promise<Notebook[]> {
+    console.info('loadNotebooks called')
+
+    if (this.isPreviewMode) {
+      const notebooksStr = this.memoryStorage.get(this.NOTEBOOKS_KEY) || '[]'
+      const notebooks = JSON.parse(notebooksStr) as Notebook[]
+      console.info(`Loaded ${notebooks.length} notebooks from memory`)
+      return notebooks
+    } else {
+      if (!this.dataPreferences) {
+        const notebooksStr = this.memoryStorage.get(this.NOTEBOOKS_KEY) || '[]'
+        const notebooks = JSON.parse(notebooksStr) as Notebook[]
+        console.info(`Loaded ${notebooks.length} notebooks from memory (fallback)`)
+        return notebooks
+      }
+
+      try {
+        const notebooksStr = await this.dataPreferences.get(this.NOTEBOOKS_KEY, '[]') as string
+        const notebooks = JSON.parse(notebooksStr) as Notebook[]
+        console.info(`Successfully loaded ${notebooks.length} notebooks from preferences`)
+        return notebooks
+      } catch (error) {
+        console.error('Failed to load from preferences, using memory storage')
+        const notebooksStr = this.memoryStorage.get(this.NOTEBOOKS_KEY) || '[]'
+        const notebooks = JSON.parse(notebooksStr) as Notebook[]
+        console.info(`Loaded ${notebooks.length} notebooks from memory (fallback)`)
+        return notebooks
+      }
+    }
+  }
+
+  async saveNotebook(newNotebook: Notebook): Promise<void> {
+    console.info('saveNotebook called with:', JSON.stringify(newNotebook))
+    try {
+      const notebooks = await this.loadNotebooks()
+      notebooks.push(newNotebook)
+      await this.saveNotebooks(notebooks)
+      console.info('saveNotebook completed successfully')
+    } catch (error) {
+      console.error('Failed to save notebook')
+      throw new Error('Failed to save notebook')
+    }
+  }
+
+  async deleteNotebook(id: string): Promise<void> {
+    try {
+      const notebooks = await this.loadNotebooks()
+      const filteredNotebooks = notebooks.filter((n: Notebook) => n.id !== id)
+      await this.saveNotebooks(filteredNotebooks)
+      console.info(`Deleted notebook with id: ${id}`)
+    } catch (error) {
+      console.error('Failed to delete notebook')
+      throw new Error('Failed to delete notebook')
     }
   }
 }

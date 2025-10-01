@@ -26,6 +26,41 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
+    // Get main window and configure it
+    windowStage.getMainWindow((err, windowClass) => {
+      if (err.code) {
+        hilog.error(DOMAIN, 'testTag', 'Failed to get main window. Cause: %{public}s', JSON.stringify(err));
+        return;
+      }
+
+      // Set window to full screen layout (extend to status bar and navigation bar)
+      windowClass.setWindowLayoutFullScreen(true, (err) => {
+        if (err.code) {
+          hilog.error(DOMAIN, 'testTag', 'Failed to set layout full screen. Cause: %{public}s', JSON.stringify(err));
+          return;
+        }
+        hilog.info(DOMAIN, 'testTag', 'Succeeded in setting layout full screen.');
+      });
+
+      // Set window background color to black
+      windowClass.setWindowBackgroundColor('#000000');
+
+      // Set status bar content color to light (white icons/text)
+      const systemBarProperties: window.SystemBarProperties = {
+        statusBarColor: '#000000',
+        navigationBarColor: '#000000',
+        statusBarContentColor: '#FFFFFF',
+        navigationBarContentColor: '#FFFFFF'
+      };
+      windowClass.setWindowSystemBarProperties(systemBarProperties, (err) => {
+        if (err.code) {
+          hilog.error(DOMAIN, 'testTag', 'Failed to set system bar properties. Cause: %{public}s', JSON.stringify(err));
+          return;
+        }
+        hilog.info(DOMAIN, 'testTag', 'Succeeded in setting system bar properties.');
+      });
+    });
+
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
         hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));

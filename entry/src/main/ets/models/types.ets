@@ -11,6 +11,13 @@ export interface Notebook {
   title: string
   icon: string
   color?: string
+  items?: NotebookItem[]
+}
+
+export interface NotebookItem {
+  id: string
+  name: string
+  icon: string
 }
 
 export interface RouterParams {

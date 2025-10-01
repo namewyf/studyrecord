@@ -1,11 +1,17 @@
 // Router is now accessed through UIContext
 // PromptAction is now accessed through UIContext
+import common from '@ohos.app.ability.common'
 import { Notebook } from '../models/types'
+import { StorageService } from '../services/StorageService'
 
 @Entry
 @Component
 struct Index {
-  @State notebooks: Notebook[] = [
+  @State notebooks: Notebook[] = []
+  @State isLoading: boolean = true
+
+  // 默认日记本列表（首次使用时）
+  private defaultNotebooks: Notebook[] = [
     {
       id: 'reading',
       title: '今年看过多少本书?',
@@ -26,6 +32,38 @@ struct Index {
     }
   ]
 
+  aboutToAppear() {
+    this.loadNotebooks()
+  }
+
+  onPageShow() {
+    this.loadNotebooks()
+  }
+
+  async loadNotebooks() {
+    try {
+      const storageService = StorageService.getInstance()
+      const context = getContext(this) as common.UIAbilityContext
+      await storageService.init(context)
+
+      let notebooks = await storageService.loadNotebooks()
+
+      // 如果是首次使用，保存默认日记本
+      if (notebooks.length === 0) {
+        await storageService.saveNotebooks(this.defaultNotebooks)
+        notebooks = this.defaultNotebooks
+      }
+
+      this.notebooks = notebooks
+      this.isLoading = false
+      console.info(`Loaded ${this.notebooks.length} notebooks`)
+    } catch (error) {
+      console.error('Failed to load notebooks:', error)
+      this.notebooks = this.defaultNotebooks
+      this.isLoading = false
+    }
+  }
+
   navigateToNotebook(notebook: Notebook) {
     this.getUIContext().getRouter().pushUrl({
       url: 'pages/NotebookCalendar',
@@ -36,10 +74,8 @@ struct Index {
   }
 
   navigateToCreateNotebook() {
-    // TODO: 实现创建日记本功能
-    this.getUIContext().getPromptAction().showToast({
-      message: '创建日记本功能待实现',
-      duration: 2000
+    this.getUIContext().getRouter().pushUrl({
+      url: 'pages/CreateNotebook'
     })
   }
 
@@ -99,31 +135,35 @@ struct Index {
       }
       .width('100%')
       .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 40 })
       .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(VerticalAlign.Center)
 
       // 日记本网格
-      Column() {
-        // 第一行：前两个日记本
-        Row() {
-          this.notebookCard(this.notebooks[0])
-          Blank()
-          this.notebookCard(this.notebooks[1])
-        }
-        .width('100%')
-        .margin({ bottom: 20 })
+      if (this.isLoading) {
+        Text('加载中...')
+          .fontSize(16)
+          .fontColor('#666666')
+          .margin({ top: 100 })
+      } else {
+        Grid() {
+          ForEach(this.notebooks, (notebook: Notebook) => {
+            GridItem() {
+              this.notebookCard(notebook)
+            }
+          }, (notebook: Notebook) => notebook.id)
 
-        // 第二行：第三个日记本和创建按钮
-        Row() {
-          this.notebookCard(this.notebooks[2])
-          Blank()
-          this.createNotebookCard()
+          // 创建按钮
+          GridItem() {
+            this.createNotebookCard()
+          }
         }
+        .columnsTemplate('1fr 1fr')
+        .rowsGap(20)
+        .columnsGap(20)
         .width('100%')
+        .padding({ left: 16, right: 16, top: 40 })
       }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 40 })
     }
     .width('100%')
     .height('100%')
