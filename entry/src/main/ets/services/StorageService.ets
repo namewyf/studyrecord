@@ -24,20 +24,33 @@ export class StorageService {
 
   async init(context: common.UIAbilityContext): Promise<void> {
     console.info('StorageService.init called')
+    console.info('Current isPreviewMode:', this.isPreviewMode)
+    console.info('Current dataPreferences:', this.dataPreferences ? 'exists' : 'null')
+
+    // 如果已经成功初始化preferences，直接返回
+    if (this.dataPreferences && !this.isPreviewMode) {
+      console.info('StorageService already initialized with preferences')
+      return
+    }
+
+    // 如果已经是预览器模式，不需要重复尝试
+    if (this.isPreviewMode) {
+      console.info('Already in preview mode, using memory storage')
+      return
+    }
 
     // 检测是否在预览器环境
     try {
-      if (!this.dataPreferences) {
-        console.info('Creating preferences with name:', this.STORE_NAME)
-        this.dataPreferences = await preferences.getPreferences(context, this.STORE_NAME)
-        console.info('StorageService initialized successfully with preferences')
-        this.isPreviewMode = false
-      } else {
-        console.info('StorageService already initialized')
-      }
+      console.info('Creating preferences with name:', this.STORE_NAME)
+      this.dataPreferences = await preferences.getPreferences(context, this.STORE_NAME)
+      console.info('✅ StorageService initialized successfully with PERSISTENT storage')
+      console.info('✅ Data will be saved to device and persist after app restart')
+      this.isPreviewMode = false
     } catch (error) {
       // 在预览器环境中，使用内存存储
-      console.warn('Failed to initialize preferences, using memory storage for preview mode')
+      console.warn('❌ Failed to initialize preferences, using memory storage')
+      console.warn('⚠️ This is likely PREVIEWER mode - data will NOT persist after refresh')
+      console.warn('⚠️ To test persistence, please deploy to EMULATOR or REAL DEVICE')
       console.warn('Error details:', JSON.stringify(error, null, 2))
       this.isPreviewMode = true
       // 只在第一次初始化时设置空数组，避免清空已有数据
@@ -58,31 +71,31 @@ export class StorageService {
 
     if (this.isPreviewMode) {
       // 预览器模式：使用内存存储
-      console.info('Using memory storage (preview mode)')
+      console.warn('⚠️ Using memory storage (PREVIEW MODE - data will be lost on refresh)')
       this.memoryStorage.set(this.RECORDS_KEY, recordsStr)
-      console.info(`Successfully saved ${records.length} records to memory`)
+      console.info(`Saved ${records.length} records to memory`)
     } else {
       // 真实设备模式：使用preferences
       if (!this.dataPreferences) {
         console.error('StorageService not initialized - dataPreferences is null')
         // 尝试使用内存存储作为后备
         this.memoryStorage.set(this.RECORDS_KEY, recordsStr)
-        console.info(`Fallback: saved ${records.length} records to memory`)
+        console.warn(`⚠️ Fallback: saved ${records.length} records to memory`)
         return
       }
 
       try {
-        console.info('Saving records string length:', recordsStr.length)
+        console.info('Saving to persistent storage...')
         await this.dataPreferences.put(this.RECORDS_KEY, recordsStr)
-        console.info('Put operation completed')
         await this.dataPreferences.flush()
-        console.info(`Successfully saved ${records.length} records to preferences`)
+        console.info(`✅ Successfully saved ${records.length} records to PERSISTENT storage`)
+        console.info(`✅ Data will persist after app restart`)
       } catch (error) {
-        console.error('Failed to save to preferences, using memory storage')
+        console.error('❌ Failed to save to preferences, using memory storage')
         console.error('Error details:', JSON.stringify(error, null, 2))
         // 失败时使用内存存储
         this.memoryStorage.set(this.RECORDS_KEY, recordsStr)
-        console.info(`Fallback: saved ${records.length} records to memory`)
+        console.warn(`⚠️ Fallback: saved ${records.length} records to memory`)
       }
     }
   }
@@ -92,7 +105,7 @@ export class StorageService {
 
     if (this.isPreviewMode) {
       // 预览器模式：从内存加载
-      console.info('Loading from memory storage (preview mode)')
+      console.warn('⚠️ Loading from memory storage (PREVIEW MODE)')
       const recordsStr = this.memoryStorage.get(this.RECORDS_KEY) || '[]'
       const records = JSON.parse(recordsStr) as StudyRecord[]
       console.info(`Loaded ${records.length} records from memory`)
@@ -100,24 +113,24 @@ export class StorageService {
     } else {
       // 真实设备模式：从preferences加载
       if (!this.dataPreferences) {
-        console.warn('StorageService not initialized, loading from memory')
+        console.warn('⚠️ StorageService not initialized, loading from memory')
         const recordsStr = this.memoryStorage.get(this.RECORDS_KEY) || '[]'
         const records = JSON.parse(recordsStr) as StudyRecord[]
-        console.info(`Loaded ${records.length} records from memory (fallback)`)
+        console.warn(`Loaded ${records.length} records from memory (fallback)`)
         return records
       }
 
       try {
         const recordsStr = await this.dataPreferences.get(this.RECORDS_KEY, '[]') as string
         const records = JSON.parse(recordsStr) as StudyRecord[]
-        console.info(`Successfully loaded ${records.length} records from preferences`)
+        console.info(`✅ Successfully loaded ${records.length} records from PERSISTENT storage`)
         return records
       } catch (error) {
-        console.error('Failed to load from preferences, using memory storage')
+        console.error('❌ Failed to load from preferences, using memory storage')
         console.error('Error details:', JSON.stringify(error, null, 2))
         const recordsStr = this.memoryStorage.get(this.RECORDS_KEY) || '[]'
         const records = JSON.parse(recordsStr) as StudyRecord[]
-        console.info(`Loaded ${records.length} records from memory (fallback)`)
+        console.warn(`⚠️ Loaded ${records.length} records from memory (fallback)`)
         return records
       }
     }
