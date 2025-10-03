@@ -11,8 +11,8 @@ struct CreateNotebook {
   @State notebookName: string = ''
   @State notebookIcon: string = '🚴'
   @State items: NotebookItem[] = [
-    { id: 'item1', name: '日记事项一', icon: '✳️' },
-    { id: 'item2', name: '日记事项二', icon: '❌' }
+    { id: 'item1', name: '打卡事项一', icon: '✳️' },
+    { id: 'item2', name: '打卡事项二', icon: '❌' }
   ]
 
   private availableIcons: string[] = ['🚴', '📗', '💕', '🙋', '⚽', '🎮', '🎵', '✈️', '🍕', '☕']
@@ -37,7 +37,7 @@ struct CreateNotebook {
   addItem() {
     const newItem: NotebookItem = {
       id: `item${Date.now()}`,
-      name: `日记事项${this.items.length + 1}`,
+      name: `打卡事项${this.items.length + 1}`,
       icon: this.availableItemIcons[this.items.length % this.availableItemIcons.length]
     }
     this.items.push(newItem)
@@ -50,7 +50,7 @@ struct CreateNotebook {
   async createNotebook() {
     if (!this.notebookName.trim()) {
       this.getUIContext().getPromptAction().showToast({
-        message: '请输入日记名',
+        message: '请输入打卡本名称',
         duration: 2000
       })
       return
@@ -71,7 +71,7 @@ struct CreateNotebook {
       await storageService.saveNotebook(newNotebook)
 
       this.getUIContext().getPromptAction().showToast({
-        message: '日记本创建成功',
+        message: '打卡本创建成功',
         duration: 2000
       })
 
@@ -111,7 +111,7 @@ struct CreateNotebook {
               .margin({ bottom: 20 })
 
             Row() {
-              Text('日记图标')
+              Text('打卡图标')
                 .fontSize(16)
                 .fontColor('#FFFFFF')
 
@@ -133,10 +133,10 @@ struct CreateNotebook {
           .alignItems(HorizontalAlign.Center)
           .margin({ top: 20 })
 
-          // 日记名输入
+          // 打卡本名称输入
           Column() {
             Row() {
-              Text('日记名')
+              Text('打卡本名称')
                 .fontSize(16)
                 .fontColor('#FFFFFF')
             }
@@ -144,7 +144,7 @@ struct CreateNotebook {
             .margin({ bottom: 10 })
 
             Column() {
-              TextInput({ placeholder: '这次计什么呢…' })
+              TextInput({ placeholder: '记录什么呢…' })
                 .placeholderColor('#666666')
                 .fontColor('#FFFFFF')
                 .fontSize(16)
@@ -173,10 +173,10 @@ struct CreateNotebook {
           .alignSelf(ItemAlign.Center)
           .margin({ bottom: 40 })
 
-          // 日记事项
+          // 打卡事项
           Column() {
             Row() {
-              Text('日记事项')
+              Text('打卡事项')
                 .fontSize(16)
                 .fontColor('#FFFFFF')
             }
@@ -233,7 +233,7 @@ struct CreateNotebook {
                 .fillColor('#666666')
                 .margin({ right: 12 })
 
-              Text('新增日记事项')
+              Text('新增打卡事项')
                 .fontSize(16)
                 .fontColor('#999999')
             }
@@ -251,7 +251,7 @@ struct CreateNotebook {
 
           // 滑动创建按钮
           SlideButton({
-            text: '滑动创建日记本',
+            text: '滑动创建打卡本',
             onConfirm: () => {
               this.createNotebook()
             }

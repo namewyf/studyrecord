@@ -132,7 +132,7 @@ struct NotebookCalendar {
     } else {
       // Default item if no items exist
       const defaultItem: ItemStatistic = {
-        name: '日记事项一',
+        name: '打卡事项一',
         count: filteredRecords.length
       }
       stats.push(defaultItem)
@@ -249,7 +249,7 @@ struct NotebookCalendar {
             })
 
             Column() {
-              Button('计一下')
+              Button('打卡')
                 .fontSize(16)
                 .fontColor('#000000')
                 .backgroundColor('#FFA500')
@@ -547,7 +547,7 @@ struct NotebookCalendar {
                     .fontColor('#666666')
                 }
 
-                Text('日记事项一')
+                Text('打卡事项一')
                   .fontSize(14)
                   .fontColor('#999999')
 

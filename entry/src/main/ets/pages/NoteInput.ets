@@ -80,7 +80,7 @@ struct NoteInput {
       .padding({ left: 16, right: 16, top: 56, bottom: 16 })
 
       // 文字输入区域
-      TextArea({ placeholder: '写点什么...', text: this.text })
+      TextArea({ placeholder: '写写复盘心得...', text: this.text })
         .placeholderColor('#666666')
         .fontColor('#FFFFFF')
         .fontSize(16)

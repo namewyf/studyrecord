@@ -10,18 +10,18 @@ struct Index {
   @State notebooks: Notebook[] = []
   @State isLoading: boolean = true
 
-  // 默认日记本列表（首次使用时）
+  // 默认打卡本列表（首次使用时）
   private defaultNotebooks: Notebook[] = [
     {
-      id: 'reading',
-      title: '今年看过多少本书?',
-      icon: '📗',
+      id: 'homework',
+      title: '今天完成作业了吗?',
+      icon: '📝',
       color: '#4CAF50'
     },
     {
-      id: 'love',
-      title: '今天做爱了吗?',
-      icon: '💕',
+      id: 'exercise',
+      title: '教辅练习打卡',
+      icon: '📚',
       color: '#FF4081'
     },
     {
@@ -48,7 +48,7 @@ struct Index {
 
       let notebooks = await storageService.loadNotebooks()
 
-      // 如果是首次使用，保存默认日记本
+      // 如果是首次使用，保存默认打卡本
       if (notebooks.length === 0) {
         await storageService.saveNotebooks(this.defaultNotebooks)
         notebooks = this.defaultNotebooks
@@ -107,7 +107,7 @@ struct Index {
         .fontColor('#666666')
         .margin({ bottom: 20 })
 
-      Text('创建日记本')
+      Text('创建打卡本')
         .fontSize(16)
         .fontColor('#666666')
         .textAlign(TextAlign.Center)
@@ -124,7 +124,7 @@ struct Index {
     Column() {
       // 顶部导航栏
       Row() {
-        Text('心生一计')
+        Text('学霸打卡')
           .fontSize(24)
           .fontColor('#FFFFFF')
           .fontWeight(FontWeight.Bold)
@@ -139,7 +139,7 @@ struct Index {
       .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(VerticalAlign.Center)
 
-      // 日记本网格
+      // 打卡本网格
       if (this.isLoading) {
         Text('加载中...')
           .fontSize(16)

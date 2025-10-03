@@ -56,7 +56,7 @@ struct RecordDetail {
     const dateObj = new Date(this.date)
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0')
     const day = dateObj.getDate().toString().padStart(2, '0')
-    return `${month}.${day} 计数`
+    return `${month}.${day} 打卡`
   }
 
   hasRecord(day: number): StudyRecord | undefined {
@@ -73,7 +73,7 @@ struct RecordDetail {
   }
 
   getStatusText(): string {
-    return '看完了一本书'
+    return '完成了作业'
   }
 
   async saveRecord() {
@@ -215,7 +215,7 @@ struct RecordDetail {
 
       // 输入框
       Column() {
-        TextInput({ placeholder: '写点什么...' })
+        TextInput({ placeholder: '写写复盘心得...' })
           .placeholderColor('#666666')
           .fontColor('#FFFFFF')
           .fontSize(16)
