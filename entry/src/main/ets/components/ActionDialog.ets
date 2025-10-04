@@ -19,12 +19,12 @@ export struct ActionDialog {
       .width('100%')
       .padding({ left: 16, right: 16, top: 16 })
 
-      Text('记录今天的作业状态')
+      Text('这张试卷怎么样')
         .fontSize(18)
         .fontColor('#FFFFFF')
         .margin({ top: 20, bottom: 30 })
 
-      // 作业完成选项
+      // 小菜一碟选项
       Column() {
         Row() {
           Row() {
@@ -35,7 +35,7 @@ export struct ActionDialog {
               .margin({ right: 12 })
 
             Column() {
-              Text('作业做完了')
+              Text('小菜一碟')
                 .fontSize(16)
                 .fontColor('#FFFFFF')
                 .fontWeight(FontWeight.Medium)
@@ -59,7 +59,7 @@ export struct ActionDialog {
       .borderRadius(8)
       .margin({ bottom: 12 })
 
-      // 准备抄作业选项
+      // 有点难度选项
       Column() {
         Row() {
           Row() {
@@ -70,7 +70,7 @@ export struct ActionDialog {
               .margin({ right: 12 })
 
             Column() {
-              Text('做了，准备抄了')
+              Text('有点难度')
                 .fontSize(16)
                 .fontColor('#FFFFFF')
                 .fontWeight(FontWeight.Medium)

@@ -3,7 +3,7 @@
 import common from '@ohos.app.ability.common'
 import { ActionDialog } from '../components/ActionDialog'
 import { CalendarView } from '../components/CalendarView'
-import { StudyRecord, Notebook, RouterParams, ItemStatistic, MonthInfo } from '../models/types'
+import { StudyRecord, Notebook, RouterParams, MonthInfo } from '../models/types'
 import { StorageService } from '../services/StorageService'
 
 @Entry
@@ -16,7 +16,7 @@ struct NotebookCalendar {
   @State showActionDialog: boolean = false
   @State selectedDate: string = ''
   @State notebook: Notebook = { id: '', title: '', icon: '' }
-  @State currentTab: 'calendar' | 'stats' | 'records' = 'calendar'
+  @State currentTab: 'calendar' | 'records' = 'calendar'
   @State viewMode: 'month' | 'year' = 'month'
   @State showMonthPicker: boolean = false
   @State notebookCreatedDate: Date = new Date()
@@ -90,56 +90,6 @@ struct NotebookCalendar {
     }).length
   }
 
-  getFilteredRecords(): StudyRecord[] {
-    if (this.viewMode === 'month') {
-      // Filter by current month and year
-      return this.records.filter(r => {
-        const recordDate = new Date(r.date)
-        return recordDate.getFullYear() === this.currentYear && recordDate.getMonth() + 1 === this.currentMonth
-      })
-    } else {
-      // Filter by current year
-      return this.records.filter(r => {
-        const recordDate = new Date(r.date)
-        return recordDate.getFullYear() === this.currentYear
-      })
-    }
-  }
-
-  getItemStatistics(): ItemStatistic[] {
-    const items = this.notebook.items || []
-    const stats: ItemStatistic[] = []
-    const filteredRecords = this.getFilteredRecords()
-
-    // Count records for each item
-    // For now, just count all records as they don't have item association yet
-    // This is a placeholder - you may want to extend StudyRecord to include itemId
-    if (items.length > 0) {
-      const firstItem: ItemStatistic = {
-        name: items[0].name,
-        count: filteredRecords.length
-      }
-      stats.push(firstItem)
-
-      // Add remaining items with 0 count
-      for (let i = 1; i < items.length; i++) {
-        const item: ItemStatistic = {
-          name: items[i].name,
-          count: 0
-        }
-        stats.push(item)
-      }
-    } else {
-      // Default item if no items exist
-      const defaultItem: ItemStatistic = {
-        name: '打卡事项一',
-        count: filteredRecords.length
-      }
-      stats.push(defaultItem)
-    }
-
-    return stats
-  }
 
   getAvailableMonths(): MonthInfo[] {
     const months: MonthInfo[] = []
@@ -190,13 +140,6 @@ struct NotebookCalendar {
               .onClick(() => {
                 this.currentTab = 'calendar'
               })
-            Text('统计')
-              .fontSize(18)
-              .fontColor(this.currentTab === 'stats' ? '#FFFFFF' : '#666666')
-              .margin({ left: 40 })
-              .onClick(() => {
-                this.currentTab = 'stats'
-              })
             Text('记录')
               .fontSize(18)
               .fontColor(this.currentTab === 'records' ? '#FFFFFF' : '#666666')
@@ -218,8 +161,6 @@ struct NotebookCalendar {
         // 内容区域
         if (this.currentTab === 'calendar') {
           this.buildCalendarView()
-        } else if (this.currentTab === 'stats') {
-          this.buildStatsView()
         } else if (this.currentTab === 'records') {
           this.buildRecordsView()
         }
@@ -262,31 +203,6 @@ struct NotebookCalendar {
                 })
             }
             .layoutWeight(2)
-          }
-          .width('100%')
-          .height(60)
-          .backgroundColor('#1A1A1A')
-          .padding({ top: 10 })
-        } else if (this.currentTab === 'stats') {
-          // 统计tab的底部按钮
-          Row() {
-            Text('月')
-              .fontSize(16)
-              .fontColor(this.viewMode === 'month' ? '#FFFFFF' : '#666666')
-              .layoutWeight(1)
-              .textAlign(TextAlign.Center)
-              .onClick(() => {
-                this.viewMode = 'month'
-              })
-
-            Text('年')
-              .fontSize(16)
-              .fontColor(this.viewMode === 'year' ? '#FFFFFF' : '#666666')
-              .layoutWeight(1)
-              .textAlign(TextAlign.Center)
-              .onClick(() => {
-                this.viewMode = 'year'
-              })
           }
           .width('100%')
           .height(60)
@@ -428,79 +344,6 @@ struct NotebookCalendar {
     .width('100%')
   }
 
-  @Builder
-  buildStatsView() {
-    Column() {
-      if (this.viewMode === 'month') {
-        Text(`${this.currentMonth.toString().padStart(2, '0')} 月`)
-          .fontSize(20)
-          .fontColor('#FFFFFF')
-          .fontWeight(FontWeight.Medium)
-          .margin({ top: 20, bottom: 10 })
-      } else {
-        Text(`${this.currentYear} 年`)
-          .fontSize(20)
-          .fontColor('#FFFFFF')
-          .fontWeight(FontWeight.Medium)
-          .margin({ top: 20, bottom: 10 })
-      }
-
-      Text(this.notebook.title)
-        .fontSize(16)
-        .fontColor('#999999')
-        .margin({ bottom: 10 })
-
-      Row() {
-        Text(this.getFilteredRecords().length.toString())
-          .fontSize(32)
-          .fontColor('#FFFFFF')
-          .fontWeight(FontWeight.Bold)
-        Text(' *')
-          .fontSize(20)
-          .fontColor('#666666')
-      }
-      .margin({ bottom: 30 })
-
-      // 统计内容
-      Column() {
-        ForEach(this.getItemStatistics(), (item: ItemStatistic) => {
-          Column() {
-            Text(this.notebook.icon)
-              .fontSize(48)
-              .margin({ bottom: 16 })
-
-            Text(item.count.toString())
-              .fontSize(32)
-              .fontColor('#FFFFFF')
-              .fontWeight(FontWeight.Bold)
-              .margin({ bottom: 8 })
-
-            Text(item.name)
-              .fontSize(16)
-              .fontColor('#999999')
-          }
-          .margin({ bottom: 40 })
-        }, (item: ItemStatistic) => item.name)
-      }
-      .layoutWeight(1)
-
-      // 分享统计按钮
-      Button() {
-        Row() {
-          Text('分享统计')
-            .fontSize(16)
-            .fontColor('#FFFFFF')
-          Text(' >')
-            .fontSize(16)
-            .fontColor('#666666')
-        }
-      }
-      .backgroundColor('transparent')
-      .margin({ bottom: 20 })
-    }
-    .layoutWeight(1)
-    .width('100%')
-  }
 
   @Builder
   buildRecordsView() {
@@ -531,50 +374,59 @@ struct NotebookCalendar {
       List({ space: 20 }) {
         ForEach(this.getSortedRecords(), (record: StudyRecord) => {
           ListItem() {
-            Row() {
-              Text(this.notebook.icon)
-                .fontSize(24)
-                .margin({ right: 12 })
-
-              Column({ space: 4 }) {
+            Column() {
+              // 顶部：日期和操作按钮
+              Row() {
+                // 左侧图标和日期
                 Row() {
-                  Text(new Date(record.date).getDate().toString())
-                    .fontSize(20)
-                    .fontColor('#FFFFFF')
-                    .fontWeight(FontWeight.Bold)
-                  Text(`. /${new Date(record.date).getMonth() + 1}月`)
-                    .fontSize(16)
-                    .fontColor('#666666')
+                  Text(this.notebook.icon)
+                    .fontSize(32)
+                    .margin({ right: 12 })
+
+                  Text(`${new Date(record.date).getDate()}. /${new Date(record.date).getMonth() + 1}月`)
+                    .fontSize(18)
+                    .fontColor('#999999')
                 }
 
-                Text('打卡事项一')
-                  .fontSize(14)
-                  .fontColor('#999999')
+                Blank()
 
-                if (record.note && record.note.length > 0) {
-                  Text(record.note)
-                    .fontSize(14)
-                    .fontColor('#666666')
-                    .maxLines(1)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                } else {
-                  Text('测试')
-                    .fontSize(14)
-                    .fontColor('#666666')
-                    .maxLines(1)
+                // 右侧操作按钮
+                Row({ space: 16 }) {
+                  Image($r('app.media.startIcon'))
+                    .width(24)
+                    .height(24)
+                    .fillColor('#FFFFFF')
+
+                  Image($r('app.media.more'))
+                    .width(24)
+                    .height(24)
                 }
               }
-              .alignItems(HorizontalAlign.Start)
-              .layoutWeight(1)
+              .width('100%')
+              .margin({ bottom: 20 })
 
-              Image($r('app.media.arrow_right'))
-                .width(20)
-                .height(20)
+              // 中间：选项文字（白色）
+              Text(record.status === 'completed' ? '小菜一碟' : '有点难度')
+                .fontSize(24)
+                .fontColor('#FFFFFF')
+                .fontWeight(FontWeight.Medium)
+                .width('100%')
+                .margin({ bottom: 12 })
+
+              // 底部：具体记录内容（灰色）
+              if (record.note && record.note.length > 0) {
+                Text(record.note)
+                  .fontSize(18)
+                  .fontColor('#999999')
+                  .width('100%')
+                  .maxLines(2)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+              }
             }
             .width('100%')
-            .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+            .padding({ left: 20, right: 20, top: 20, bottom: 20 })
             .backgroundColor('#1A1A1A')
-            .borderRadius(8)
+            .borderRadius(12)
             .onClick(() => {
               // 跳转到记录详情
               this.getUIContext().getRouter().pushUrl({

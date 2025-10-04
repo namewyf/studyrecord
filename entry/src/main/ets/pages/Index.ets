@@ -13,8 +13,8 @@ struct Index {
   // 默认打卡本列表（首次使用时）
   private defaultNotebooks: Notebook[] = [
     {
-      id: 'homework',
-      title: '今天完成作业了吗?',
+      id: 'paper',
+      title: '数学试卷打卡',
       icon: '📝',
       color: '#4CAF50'
     },
