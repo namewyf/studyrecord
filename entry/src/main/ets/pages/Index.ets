@@ -10,27 +10,8 @@ struct Index {
   @State notebooks: Notebook[] = []
   @State isLoading: boolean = true
 
-  // 默认打卡本列表（首次使用时）
-  private defaultNotebooks: Notebook[] = [
-    {
-      id: 'paper',
-      title: '数学试卷打卡',
-      icon: '📝',
-      color: '#4CAF50'
-    },
-    {
-      id: 'exercise',
-      title: '教辅练习打卡',
-      icon: '📚',
-      color: '#FF4081'
-    },
-    {
-      id: 'onboarding',
-      title: '新用户看一眼，就看一眼',
-      icon: '🙋',
-      color: '#FF9800'
-    }
-  ]
+  // 注意：默认数据现在由 DefaultData 服务生成（在 EntryAbility 中）
+  // 这里不再需要硬编码
 
   aboutToAppear() {
     this.loadNotebooks()
@@ -46,20 +27,13 @@ struct Index {
       const context = getContext(this) as common.UIAbilityContext
       await storageService.init(context)
 
-      let notebooks = await storageService.loadNotebooks()
-
-      // 如果是首次使用，保存默认打卡本
-      if (notebooks.length === 0) {
-        await storageService.saveNotebooks(this.defaultNotebooks)
-        notebooks = this.defaultNotebooks
-      }
-
+      const notebooks = await storageService.loadNotebooks()
       this.notebooks = notebooks
       this.isLoading = false
       console.info(`Loaded ${this.notebooks.length} notebooks`)
     } catch (error) {
       console.error('Failed to load notebooks:', error)
-      this.notebooks = this.defaultNotebooks
+      this.notebooks = []
       this.isLoading = false
     }
   }

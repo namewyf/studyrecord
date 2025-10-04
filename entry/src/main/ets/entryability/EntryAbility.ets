@@ -2,6 +2,8 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { StorageService } from '../services/StorageService';
+import { MigrationService } from '../services/MigrationService';
+import { DefaultData } from '../services/DefaultData';
 
 const DOMAIN = 0x0000;
 
@@ -10,12 +12,34 @@ export default class EntryAbility extends UIAbility {
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
 
-    // Initialize StorageService
-    StorageService.getInstance().init(this.context).then(() => {
-      hilog.info(DOMAIN, 'testTag', '%{public}s', 'StorageService initialized successfully');
-    }).catch((error: Error) => {
-      hilog.error(DOMAIN, 'testTag', 'Failed to initialize StorageService: %{public}s', error.message);
-    });
+    // Initialize StorageService and perform data migration
+    this.initializeApp();
+  }
+
+  async initializeApp(): Promise<void> {
+    try {
+      // 1. 初始化存储服务
+      await StorageService.getInstance().init(this.context);
+      hilog.info(DOMAIN, 'testTag', 'StorageService initialized successfully');
+
+      // 2. 执行数据迁移
+      await MigrationService.checkAndMigrate(this.context);
+      hilog.info(DOMAIN, 'testTag', 'Data migration completed');
+
+      // 3. 检查是否是首次安装（没有任何打卡本）
+      const notebooks = await StorageService.getInstance().loadNotebooks();
+      if (notebooks.length === 0) {
+        hilog.info(DOMAIN, 'testTag', 'First time installation, creating default notebooks');
+        const defaultNotebooks = DefaultData.createDefaultNotebooks();
+        await StorageService.getInstance().saveNotebooks(defaultNotebooks);
+        hilog.info(DOMAIN, 'testTag', 'Default notebooks created');
+      }
+
+      hilog.info(DOMAIN, 'testTag', 'App initialization completed');
+    } catch (error) {
+      hilog.error(DOMAIN, 'testTag', 'Failed to initialize app: %{public}s',
+        error instanceof Error ? error.message : 'Unknown error');
+    }
   }
 
   onDestroy(): void {

@@ -3,6 +3,8 @@
 import common from '@ohos.app.ability.common'
 import { Notebook, NotebookItem } from '../models/types'
 import { StorageService } from '../services/StorageService'
+import { NotebookService } from '../services/NotebookService'
+import { DefaultData } from '../services/DefaultData'
 import { SlideButton } from '../components/SlideButton'
 
 @Entry
@@ -10,10 +12,8 @@ import { SlideButton } from '../components/SlideButton'
 struct CreateNotebook {
   @State notebookName: string = ''
   @State notebookIcon: string = '🚴'
-  @State items: NotebookItem[] = [
-    { id: 'item1', name: '打卡事项一', icon: '✳️' },
-    { id: 'item2', name: '打卡事项二', icon: '❌' }
-  ]
+  @State itemNames: string[] = ['打卡事项一', '打卡事项二']
+  @State itemIcons: string[] = ['✳️', '❌']
 
   private availableIcons: string[] = ['🚴', '📗', '💕', '🙋', '⚽', '🎮', '🎵', '✈️', '🍕', '☕']
   private availableItemIcons: string[] = ['✳️', '❌', '✅', '⭐', '❤️', '🔥', '💡', '📌']
@@ -35,16 +35,15 @@ struct CreateNotebook {
   }
 
   addItem() {
-    const newItem: NotebookItem = {
-      id: `item${Date.now()}`,
-      name: `打卡事项${this.items.length + 1}`,
-      icon: this.availableItemIcons[this.items.length % this.availableItemIcons.length]
-    }
-    this.items.push(newItem)
+    const newName = `打卡事项${this.itemNames.length + 1}`
+    const newIcon = this.availableItemIcons[this.itemNames.length % this.availableItemIcons.length]
+    this.itemNames.push(newName)
+    this.itemIcons.push(newIcon)
   }
 
   deleteItem(index: number) {
-    this.items.splice(index, 1)
+    this.itemNames.splice(index, 1)
+    this.itemIcons.splice(index, 1)
   }
 
   async createNotebook() {
@@ -61,11 +60,32 @@ struct CreateNotebook {
       const context = getContext(this) as common.UIAbilityContext
       await storageService.init(context)
 
+      // 创建打卡本的ID
+      const notebookId = NotebookService.generateId('notebook')
+
+      // 创建打卡事项
+      const items: NotebookItem[] = []
+      for (let i = 0; i < this.itemNames.length; i++) {
+        const item = NotebookService.createNotebookItem(
+          this.itemNames[i],
+          this.itemIcons[i],
+          notebookId,
+          i + 1
+        )
+        items.push(item)
+      }
+
+      // 创建默认选项
+      const checkInOptions = DefaultData.createDifficultyOptions()
+
+      // 创建新打卡本
       const newNotebook: Notebook = {
-        id: `notebook_${Date.now()}`,
+        id: notebookId,
         title: this.notebookName,
         icon: this.notebookIcon,
-        items: this.items
+        checkInOptions: checkInOptions,
+        items: items,
+        createdAt: Date.now()
       }
 
       await storageService.saveNotebook(newNotebook)
@@ -184,7 +204,7 @@ struct CreateNotebook {
             .margin({ bottom: 20 })
 
             // 事项列表
-            ForEach(this.items, (item: NotebookItem, index: number) => {
+            ForEach(this.itemNames, (itemName: string, index: number) => {
               Row() {
                 // 拖动手柄
                 Text('::')
@@ -193,12 +213,12 @@ struct CreateNotebook {
                   .margin({ right: 16 })
 
                 // 图标
-                Text(item.icon)
+                Text(this.itemIcons[index])
                   .fontSize(32)
                   .margin({ right: 16 })
 
                 // 名称
-                Text(item.name)
+                Text(itemName)
                   .fontSize(16)
                   .fontColor('#FFFFFF')
                   .layoutWeight(1)
@@ -223,7 +243,7 @@ struct CreateNotebook {
                     this.deleteItem(index)
                   })
               )
-            }, (item: NotebookItem) => item.id)
+            }, (itemName: string, index: number) => `${index}_${itemName}`)
 
             // 新增事项按钮
             Row() {

@@ -3,20 +3,21 @@
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
 import { StorageService } from '../services/StorageService'
+import { NotebookService } from '../services/NotebookService'
 
 @Entry
 @Component
 struct NoteInput {
   @State text: string = ''
   @State date: string = ''
-  @State status: string = ''
+  @State optionId: string = ''
   @State notebookId: string = ''
 
   aboutToAppear() {
     const params = (this.getUIContext().getRouter().getParams() || {}) as RouterParams
     this.text = params?.text || ''
     this.date = params?.date || ''
-    this.status = params?.status || ''
+    this.optionId = params?.optionId || ''
     this.notebookId = params?.notebookId || ''
   }
 
@@ -27,13 +28,23 @@ struct NoteInput {
       const context = getContext(this) as common.UIAbilityContext
       await storageService.init(context)
 
+      // 获取打卡本，使用第一个事项
+      const notebook = await storageService.getNotebookById(this.notebookId)
+      if (!notebook) {
+        throw new Error('Notebook not found')
+      }
+
+      const itemId = notebook.items[0]?.id || ''
+
       // 创建新记录
       const newRecord: StudyRecord = {
+        id: NotebookService.generateId('record'),
         date: this.date,
-        status: this.status as 'completed' | 'copied',
+        notebookId: this.notebookId,
+        itemId: itemId,
+        optionId: this.optionId,
         note: this.text,
-        timestamp: Date.now(),
-        notebookId: this.notebookId
+        createdAt: Date.now()
       }
 
       // 保存记录

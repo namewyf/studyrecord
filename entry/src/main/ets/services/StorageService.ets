@@ -1,6 +1,6 @@
 import preferences from '@ohos.data.preferences'
 import common from '@ohos.app.ability.common'
-import { StudyRecord, Notebook } from '../models/types'
+import { StudyRecord, Notebook, CheckInOption } from '../models/types'
 
 export class StorageService {
   private static instance: StorageService
@@ -285,6 +285,132 @@ export class StorageService {
     } catch (error) {
       console.error('Failed to delete notebook')
       throw new Error('Failed to delete notebook')
+    }
+  }
+
+  // ==================== 新版数据模型支持方法 ====================
+
+  /**
+   * 根据ID获取打卡本
+   */
+  async getNotebookById(id: string): Promise<Notebook | null> {
+    try {
+      const notebooks = await this.loadNotebooks()
+      return notebooks.find((n: Notebook) => n.id === id) || null
+    } catch (error) {
+      console.error('Failed to get notebook by id')
+      return null
+    }
+  }
+
+  /**
+   * 更新打卡本
+   */
+  async updateNotebook(notebook: Notebook): Promise<void> {
+    try {
+      const notebooks = await this.loadNotebooks()
+      const index = notebooks.findIndex((n: Notebook) => n.id === notebook.id)
+
+      if (index === -1) {
+        throw new Error(`Notebook not found: ${notebook.id}`)
+      }
+
+      notebooks[index] = notebook
+      await this.saveNotebooks(notebooks)
+      console.info(`Updated notebook: ${notebook.id}`)
+    } catch (error) {
+      console.error('Failed to update notebook')
+      throw new Error('Failed to update notebook')
+    }
+  }
+
+  /**
+   * 添加选项到打卡本
+   */
+  async addOptionToNotebook(notebookId: string, option: CheckInOption): Promise<void> {
+    try {
+      const notebook = await this.getNotebookById(notebookId)
+      if (!notebook) {
+        throw new Error(`Notebook not found: ${notebookId}`)
+      }
+
+      notebook.checkInOptions.push(option)
+      notebook.updatedAt = Date.now()
+      await this.updateNotebook(notebook)
+      console.info(`Added option to notebook: ${notebookId}`)
+    } catch (error) {
+      console.error('Failed to add option to notebook')
+      throw new Error('Failed to add option to notebook')
+    }
+  }
+
+  /**
+   * 删除打卡本的选项
+   */
+  async deleteOptionFromNotebook(notebookId: string, optionId: string): Promise<void> {
+    try {
+      const notebook = await this.getNotebookById(notebookId)
+      if (!notebook) {
+        throw new Error(`Notebook not found: ${notebookId}`)
+      }
+
+      notebook.checkInOptions = notebook.checkInOptions.filter(opt => opt.id !== optionId)
+      notebook.updatedAt = Date.now()
+      await this.updateNotebook(notebook)
+      console.info(`Deleted option from notebook: ${notebookId}`)
+    } catch (error) {
+      console.error('Failed to delete option from notebook')
+      throw new Error('Failed to delete option from notebook')
+    }
+  }
+
+  /**
+   * 获取数据版本
+   */
+  async getDataVersion(): Promise<number> {
+    const VERSION_KEY = 'data_version'
+
+    if (this.isPreviewMode) {
+      const version = this.memoryStorage.get(VERSION_KEY) || '1'
+      return parseInt(version, 10)
+    } else {
+      if (!this.dataPreferences) {
+        return 1
+      }
+
+      try {
+        const version = await this.dataPreferences.get(VERSION_KEY, '1') as string
+        return parseInt(version, 10)
+      } catch (error) {
+        console.error('Failed to get data version')
+        return 1
+      }
+    }
+  }
+
+  /**
+   * 设置数据版本
+   */
+  async setDataVersion(version: number): Promise<void> {
+    const VERSION_KEY = 'data_version'
+
+    if (this.isPreviewMode) {
+      this.memoryStorage.set(VERSION_KEY, version.toString())
+      console.info(`Set data version to ${version} (memory)`)
+    } else {
+      if (!this.dataPreferences) {
+        this.memoryStorage.set(VERSION_KEY, version.toString())
+        return
+      }
+
+      try {
+        await this.dataPreferences.put(VERSION_KEY, version.toString())
+        await this.dataPreferences.flush()
+        console.info(`Set data version to ${version}`)
+      } catch (error) {
+        console.error('Failed to set data version')
+        this.memoryStorage.set(VERSION_KEY, version.toString())
+      }
     }
   }
 }

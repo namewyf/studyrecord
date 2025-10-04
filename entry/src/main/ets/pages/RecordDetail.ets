@@ -3,12 +3,13 @@
 import common from '@ohos.app.ability.common'
 import { StudyRecord, RouterParams } from '../models/types'
 import { StorageService } from '../services/StorageService'
+import { NotebookService } from '../services/NotebookService'
 
 @Entry
 @Component
 struct RecordDetail {
   @State date: string = ''
-  @State status: string = ''
+  @State optionId: string = ''
   @State note: string = ''
   @State notebookId: string = ''
   @State currentWeekDates: number[] = []
@@ -19,7 +20,7 @@ struct RecordDetail {
   aboutToAppear() {
     const params = this.getUIContext().getRouter().getParams() as RouterParams
     this.date = params?.date || ''
-    this.status = params?.status || ''
+    this.optionId = params?.optionId || ''
     this.notebookId = params?.notebookId || ''
     this.calculateWeekDates()
     this.loadRecords()
@@ -89,13 +90,23 @@ struct RecordDetail {
       await storageService.init(context)
       console.info('StorageService initialized')
 
+      // 获取打卡本，使用第一个事项
+      const notebook = await storageService.getNotebookById(this.notebookId)
+      if (!notebook) {
+        throw new Error('Notebook not found')
+      }
+
+      const itemId = notebook.items[0]?.id || ''
+
       // 创建新记录
       const newRecord: StudyRecord = {
+        id: NotebookService.generateId('record'),
         date: this.date,
-        status: this.status as 'completed' | 'copied',
+        notebookId: this.notebookId,
+        itemId: itemId,
+        optionId: this.optionId,
         note: this.note,
-        timestamp: Date.now(),
-        notebookId: this.notebookId
+        createdAt: Date.now()
       }
       console.info('Created new record:', JSON.stringify(newRecord))
 
@@ -232,7 +243,7 @@ struct RecordDetail {
               params: {
                 text: this.note,
                 date: this.date,
-                status: this.status,
+                optionId: this.optionId,
                 notebookId: this.notebookId
               }
             })

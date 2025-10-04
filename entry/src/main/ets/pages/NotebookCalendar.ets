@@ -15,15 +15,22 @@ struct NotebookCalendar {
   @State records: StudyRecord[] = []
   @State showActionDialog: boolean = false
   @State selectedDate: string = ''
-  @State notebook: Notebook = { id: '', title: '', icon: '' }
+  @State notebook: Notebook = {
+    id: '',
+    title: '',
+    icon: '',
+    checkInOptions: [],
+    items: [],
+    createdAt: Date.now()
+  }
   @State currentTab: 'calendar' | 'records' = 'calendar'
   @State viewMode: 'month' | 'year' = 'month'
   @State showMonthPicker: boolean = false
   @State notebookCreatedDate: Date = new Date()
   dialogController: CustomDialogController = new CustomDialogController({
     builder: ActionDialog({
-      onCompleted: (): void => this.onActionSelect('completed'),
-      onCopied: (): void => this.onActionSelect('copied')
+      notebookId: this.notebook.id,
+      onOptionSelected: (optionId: string): void => this.onOptionSelected(optionId)
     }),
     customStyle: true,
     alignment: DialogAlignment.Bottom
@@ -70,13 +77,13 @@ struct NotebookCalendar {
     this.dialogController.open()
   }
 
-  onActionSelect(status: 'completed' | 'copied') {
+  onOptionSelected(optionId: string) {
     this.dialogController.close()
     this.getUIContext().getRouter().pushUrl({
       url: 'pages/RecordDetail',
       params: {
         date: this.selectedDate,
-        status: status,
+        optionId: optionId,
         notebookId: this.notebook.id
       }
     })
@@ -119,6 +126,11 @@ struct NotebookCalendar {
     return [...this.records].sort((a, b) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime()
     })
+  }
+
+  getOptionName(optionId: string): string {
+    const option = this.notebook.checkInOptions.find(opt => opt.id === optionId)
+    return option ? option.name : ''
   }
 
   build() {
@@ -406,7 +418,7 @@ struct NotebookCalendar {
               .margin({ bottom: 20 })
 
               // 中间：选项文字（白色）
-              Text(record.status === 'completed' ? '小菜一碟' : '有点难度')
+              Text(this.getOptionName(record.optionId || ''))
                 .fontSize(24)
                 .fontColor('#FFFFFF')
                 .fontWeight(FontWeight.Medium)
@@ -433,7 +445,7 @@ struct NotebookCalendar {
                 url: 'pages/RecordDetail',
                 params: {
                   date: record.date,
-                  status: record.status,
+                  optionId: record.optionId,
                   notebookId: this.notebook.id
                 }
               })
