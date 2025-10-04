@@ -207,7 +207,7 @@ struct RecordDetail {
               Circle()
                 .width(6)
                 .height(6)
-                .fill(this.hasRecord(this.currentWeekDates[index])?.status === 'completed' ? '#FFA500' : '#FFA500')
+                .fill('#FFA500')
                 .margin({ top: 8 })
             } else {
               // 空白占位，保持对齐

@@ -68,7 +68,7 @@ export struct ActionDialog {
       .justifyContent(FlexAlign.SpaceBetween)
       .onClick(() => {
         this.onOptionSelected(option.id)  // ✅ 传递选项ID
-        this.controller?.close()
+        // 注意：对话框关闭由回调函数处理，避免重复关闭
       })
     }
     .width('90%')
